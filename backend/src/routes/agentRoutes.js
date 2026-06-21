@@ -1,0 +1,11 @@
+import { Router } from "express";
+import { generateEmail, sendEmail, saveDraft, getVariations, optimizeSubject } from "../controllers/agentController.js";
+import { auth } from "../middleware/auth.js";
+import { generateEmailValidation } from "../utils/validators.js";
+const router = Router();
+router.post("/generate", auth, generateEmailValidation, generateEmail);
+router.post("/send", auth, sendEmail);
+router.post("/draft", auth, saveDraft);
+router.post("/variations", auth, getVariations);
+router.post("/optimize-subject", auth, optimizeSubject);
+export default router;

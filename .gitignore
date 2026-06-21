@@ -1,0 +1,60 @@
+# Dependency directories
+node_modules/
+**/node_modules/
+
+# Production / build directories
+dist/
+**/dist/
+build/
+**/build/
+out/
+**/out/
+
+# Environment files (containing secrets)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS metadata
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+# Editor/IDE configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.sublime-project
+*.sublime-workspace
+
+# Testing and coverage
+coverage/
+.nyc_output/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Bundler & linter caches
+.vite/
+**/.vite/
+.eslintcache
+.cache/
+.parcel-cache

@@ -1,0 +1,10 @@
+import { Router } from "express";
+import { discoverContacts, getContactsByJob, toggleSaveContact, deleteContact } from "../controllers/contactController.js";
+import { auth } from "../middleware/auth.js";
+const router = Router();
+router.use(auth);
+router.post("/discover/:jobId", discoverContacts);
+router.get("/job/:jobId", getContactsByJob);
+router.post("/:id/save", toggleSaveContact);
+router.delete("/:id", deleteContact);
+export default router;

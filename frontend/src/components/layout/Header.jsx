@@ -1,0 +1,5 @@
+import { Moon, Sun, Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
+export function Header({ title, onMenuClick, darkMode, onToggleDarkMode }) {
+  return /* @__PURE__ */ React.createElement("header", { className: "sticky top-0 z-30 h-16 border-b bg-background/80 backdrop-blur-lg flex items-center justify-between px-6" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-4" }, /* @__PURE__ */ React.createElement(Button, { variant: "ghost", size: "icon", onClick: onMenuClick, className: "lg:hidden" }, /* @__PURE__ */ React.createElement(Menu, { className: "h-5 w-5" })), /* @__PURE__ */ React.createElement("h1", { className: "text-xl font-semibold" }, title)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(Button, { variant: "ghost", size: "icon", onClick: onToggleDarkMode }, darkMode ? /* @__PURE__ */ React.createElement(Sun, { className: "h-5 w-5" }) : /* @__PURE__ */ React.createElement(Moon, { className: "h-5 w-5" }))));
+}

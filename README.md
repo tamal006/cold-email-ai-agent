@@ -7,7 +7,7 @@ A production-ready full-stack SaaS application that uses an AI agent to generate
 - **Frontend**: React 18 + TypeScript + Tailwind CSS + ShadCN UI + Vite
 - **Backend**: Node.js + Express + TypeScript
 - **Database**: MongoDB (Mongoose)
-- **AI**: OpenAI GPT-4o
+- **AI**: OpenAI + Groq
 - **Email**: Nodemailer + Gmail SMTP
 
 ## Features

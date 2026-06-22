@@ -28,7 +28,7 @@ A production-ready full-stack SaaS application that uses an AI agent to generate
 
 - Node.js 18+
 - MongoDB (local or Atlas)
-- OpenAI API key
+- Groq API key
 - Gmail account with App Password
 
 ## Installation
@@ -58,7 +58,7 @@ Edit `.env` with your values:
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/coldmail-agent
 JWT_SECRET=your-secure-random-string-here
-OPENAI_API_KEY=sk-your-openai-api-key
+GROQ_API_KEY=sk-your-openai-api-key
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com

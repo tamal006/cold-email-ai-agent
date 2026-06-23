@@ -1,29 +1,23 @@
-import { Job } from "../models/Job.js";
 import { JobAnalysisAgent } from "../agents/JobAnalysisAgent.js";
+import { Job } from "../models/Job.js";
+
 const jobAgent = new JobAnalysisAgent();
+
+/**
+ * Analyze a job URL and save results
+ */
 export const analyzeJob = async (req, res) => {
   try {
     const { url } = req.body;
+
     if (!url) {
-      res.status(400).json({ message: "Job posting URL is required." });
-      return;
+      return res.status(400).json({ message: "Job URL is required" });
     }
-    const userId = req.user?.id;
-    if (!userId) {
-      res.status(401).json({ message: "Unauthorized" });
-      return;
-    }
-    let job = await Job.findOne({ userId, sourceUrl: url });
-    if (job) {
-      res.json({
-        message: "Job already analyzed",
-        job
-      });
-      return;
-    }
+
     const analysis = await jobAgent.analyze(url);
-    job = await Job.create({
-      userId,
+
+    const job = await Job.create({
+      userId: req.user.id,
       sourceUrl: url,
       platform: analysis.platform,
       title: analysis.title,
@@ -37,56 +31,75 @@ export const analyzeJob = async (req, res) => {
       keywords: analysis.keywords,
       description: analysis.description,
       qualifications: analysis.qualifications,
+      preferredQualifications: analysis.preferredQualifications,
       benefits: analysis.benefits,
-      status: "analyzed",
-      analyzedAt: /* @__PURE__ */ new Date()
+      applicationDeadline: analysis.applicationDeadline,
     });
-    res.status(201).json({
-      message: "Job analyzed and saved successfully",
-      job
+
+    res.json({
+      message: "Job analyzed successfully",
+      job,
     });
   } catch (error) {
-    console.error("Job analyze error:", error);
-    res.status(500).json({ message: error.message || "Failed to analyze job URL." });
+    console.error("Analyze job error:", error);
+    res.status(500).json({ message: error.message || "Failed to analyze job" });
   }
 };
-export const getJobs = async (req, res) => {
+
+/**
+ * List all analyzed jobs for the user
+ */
+export const listJobs = async (req, res) => {
   try {
-    const userId = req.user?.id;
-    const jobs = await Job.find({ userId }).sort({ createdAt: -1 });
+    const jobs = await Job.find({ userId: req.user.id })
+      .select("title company platform location jobType status skills analyzedAt createdAt")
+      .sort({ createdAt: -1 });
+
     res.json({ jobs });
   } catch (error) {
-    console.error("Get jobs error:", error);
-    res.status(500).json({ message: "Failed to fetch jobs." });
+    console.error("List jobs error:", error);
+    res.status(500).json({ message: "Failed to fetch jobs" });
   }
 };
-export const getJobById = async (req, res) => {
+
+/**
+ * Get a single job with full details
+ */
+export const getJob = async (req, res) => {
   try {
-    const userId = req.user?.id;
-    const { id } = req.params;
-    const job = await Job.findOne({ _id: id, userId });
+    const job = await Job.findOne({
+      _id: req.params.id,
+      userId: req.user.id,
+    });
+
     if (!job) {
-      res.status(404).json({ message: "Job not found." });
-      return;
+      return res.status(404).json({ message: "Job not found" });
     }
+
     res.json({ job });
   } catch (error) {
-    console.error("Get job by ID error:", error);
-    res.status(500).json({ message: "Failed to fetch job details." });
+    console.error("Get job error:", error);
+    res.status(500).json({ message: "Failed to fetch job" });
   }
 };
+
+/**
+ * Delete a job
+ */
 export const deleteJob = async (req, res) => {
   try {
-    const userId = req.user?.id;
-    const { id } = req.params;
-    const deleted = await Job.findOneAndDelete({ _id: id, userId });
-    if (!deleted) {
-      res.status(404).json({ message: "Job not found or unauthorized." });
-      return;
+    const job = await Job.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user.id,
+    });
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
     }
-    res.json({ message: "Job deleted successfully" });
+
+    res.json({ message: "Job deleted" });
   } catch (error) {
     console.error("Delete job error:", error);
-    res.status(500).json({ message: "Failed to delete job." });
+    res.status(500).json({ message: "Failed to delete job" });
   }
 };

@@ -1,80 +1,130 @@
 import mongoose, { Schema } from "mongoose";
+
+const emailVersionSchema = new Schema(
+  {
+    subject: { type: String },
+    content: { type: String },
+    tone: { type: String },
+    editedAt: { type: Date, default: Date.now },
+    editInstruction: { type: String },
+  },
+  { _id: false }
+);
+
 const emailSchema = new Schema(
   {
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true
+      index: true,
     },
-    recipientEmail: {
+    jobId: {
+      type: Schema.Types.ObjectId,
+      ref: "Job",
+      index: true,
+    },
+    resumeId: {
+      type: Schema.Types.ObjectId,
+      ref: "Resume",
+    },
+    // Job context snapshot
+    jobTitle: {
       type: String,
-      required: [true, "Recipient email is required"],
       trim: true,
-      lowercase: true
     },
-    recipientName: {
+    company: {
       type: String,
-      trim: true
+      trim: true,
     },
-    companyName: {
+    jobUrl: {
       type: String,
-      trim: true
+      trim: true,
     },
-    jobPosition: {
+    // Resume snapshot
+    resumeProfileSnapshot: {
+      type: Schema.Types.Mixed,
+      default: {},
+    },
+    // Match analysis snapshot
+    matchAnalysis: {
+      matchScore: { type: Number, default: 0 },
+      matchingSkills: [{ type: String }],
+      missingSkills: [{ type: String }],
+      strengths: [{ type: String }],
+      weaknesses: [{ type: String }],
+    },
+    // User inputs
+    userSummary: {
       type: String,
-      trim: true
+      trim: true,
     },
-    purpose: {
+    userInstructions: {
       type: String,
-      required: [true, "Purpose is required"],
-      trim: true
+      trim: true,
     },
-    userBackground: {
-      type: String,
-      trim: true
-    },
-    additionalNotes: {
-      type: String,
-      trim: true
-    },
-    tone: {
-      type: String,
-      enum: ["professional", "friendly", "startup", "formal"],
-      default: "professional"
-    },
+    // Email content
     subject: {
       type: String,
       required: [true, "Subject is required"],
-      trim: true
+      trim: true,
     },
     content: {
       type: String,
-      required: [true, "Content is required"]
+      required: [true, "Content is required"],
     },
     htmlContent: {
-      type: String
+      type: String,
+      default: "",
     },
+    tone: {
+      type: String,
+      enum: [
+        "professional",
+        "friendly",
+        "formal",
+        "confident",
+        "enthusiastic",
+        "corporate",
+        "startup",
+        "minimal",
+        "recruiter-friendly",
+      ],
+      default: "professional",
+    },
+    // Subject alternatives
+    subjectOptions: [{ type: String }],
+    // Quality scores
+    qualityScores: {
+      professionalismScore: { type: Number, default: 0 },
+      personalizationScore: { type: Number, default: 0 },
+      grammarScore: { type: Number, default: 0 },
+      readabilityScore: { type: Number, default: 0 },
+      recruiterAppealScore: { type: Number, default: 0 },
+      ctaScore: { type: Number, default: 0 },
+      overallScore: { type: Number, default: 0 },
+      suggestions: [{ type: String }],
+    },
+    // Version history
+    versions: [emailVersionSchema],
+    // Status
     status: {
       type: String,
-      enum: ["draft", "sent", "failed"],
+      enum: ["draft", "final", "sent", "failed"],
       default: "draft",
-      index: true
+      index: true,
     },
-    qualityScore: {
-      type: Number,
-      min: 0,
-      max: 100
-    },
-    suggestions: [String],
     sentAt: {
-      type: Date
-    }
+      type: Date,
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
+
 emailSchema.index({ userId: 1, createdAt: -1 });
 emailSchema.index({ userId: 1, status: 1 });
+emailSchema.index({ userId: 1, jobId: 1 });
+
 export const Email = mongoose.model("Email", emailSchema);

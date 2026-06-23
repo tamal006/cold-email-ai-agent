@@ -1,149 +1,136 @@
-# API REFERENCE DOCUMENTATION: ColdMail AI Agent
+# API Reference Documentation: MailCraft AI
 
-## 1. Global API Standards
+This document provides request and response formats for the REST API endpoints in the MailCraft AI backend.
 
-- **Base URL**: `http://localhost:5000` (development) or relative routes proxied via Vite config (`/api/*`).
+- **Base URL**: `http://localhost:5000` (development) or proxied under `/api/*` in the Vite configuration.
 - **Headers**:
-  - `Content-Type: application/json`
+  - `Content-Type: application/json` (except multipart uploads)
   - `Authorization: Bearer <JWT_TOKEN>` (for protected endpoints)
-- **Standard Error Format**:
-  ```json
-  {
-    "message": "Error description string",
-    "errors": [] // Optional validation errors array
-  }
-  ```
 
 ---
 
-## 2. API Endpoint Directory
+## 1. API Endpoints Directory
 
 ```mermaid
 graph LR
-    subgraph AuthGroup ["Authentication (/api/auth)"]
+    subgraph AuthGroup ["Auth (/api/auth)"]
         Register[POST /register]
         Login[POST /login]
         Profile[GET /profile]
-      end
+        ProfileUpdate[PUT /profile]
+    end
+    subgraph ResumeGroup ["Resumes (/api/resume)"]
+        Upload[POST /upload]
+        ListResumes[GET /list]
+        GetResume[GET /:id]
+        DeleteResume[DELETE /:id]
+        DefaultResume[PATCH /:id/default]
+    end
     subgraph JobsGroup ["Jobs (/api/jobs)"]
-        Analyze[POST /analyze]
-        GetJobs[GET /]
-        GetJob[GET /:id]
-        DeleteJob[DELETE /:id]
-      end
-    subgraph ContactsGroup ["Contacts (/api/contacts)"]
-        Discover[POST /discover/:jobId]
-        GetContacts[GET /job/:jobId]
-        SaveContact[POST /save/:id]
-        DeleteContact[DELETE /:id]
-      end
-    subgraph OutreachGroup ["Outreach (/api/outreach)"]
-        OutreachGen[POST /generate]
-        OutreachScore[POST /score]
-        OutreachSend[POST /send]
-      end
+        JobAnalyze[POST /analyze]
+        JobList[GET /list]
+        JobDetail[GET /:id]
+    end
+    subgraph GenerateGroup ["Email Generation (/api/generate)"]
+        FullPipeline[POST /full-pipeline]
+        AIChatEdit[POST /edit]
+        ChangeTone[POST /tone]
+        RegenSubjects[POST /subjects]
+        ScoreEmail[POST /score]
+        UpdateSubject[POST /update-subject]
+    end
+    subgraph DraftGroup ["Drafts (/api/drafts)"]
+        CreateDraft[POST /]
+        ListDrafts[GET /]
+        GetDraft[GET /:id]
+        UpdateDraft[PUT /:id]
+        DeleteDraft[DELETE /:id]
+    end
 ```
 
 ---
 
-## 3. Auth Routes (`/api/auth`)
+## 2. Authentication Routes (`/api/auth`)
 
-### A. Register New User
+### A. Register User
 - **URL**: `/api/auth/register`
 - **Method**: `POST`
-- **Auth Required**: No
 - **Request Body**:
   ```json
-  {
-    "name": "Jane Doe",
-    "email": "jane@example.com",
-    "password": "securepassword123"
-  }
+  { "name": "Jane Doe", "email": "jane@example.com", "password": "securepassword123" }
   ```
 - **Response (201 Created)**:
   ```json
-  {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": "603d27f8a1fd876c12345678",
-      "name": "Jane Doe",
-      "email": "jane@example.com"
-    }
-  }
-  ```
-- **Validation Errors (400 Bad Request)**:
-  ```json
-  {
-    "message": "Validation failed",
-    "errors": [
-      { "msg": "Name is required", "path": "name" },
-      { "msg": "Please provide a valid email", "path": "email" },
-      { "msg": "Password must be at least 6 characters", "path": "password" }
-    ]
-  }
+  { "token": "eyJhbGci...", "user": { "id": "603d27f8a1fd876c12345678", "name": "Jane Doe", "email": "jane@example.com" } }
   ```
 
 ### B. Login User
 - **URL**: `/api/auth/login`
 - **Method**: `POST`
-- **Auth Required**: No
 - **Request Body**:
   ```json
-  {
-    "email": "jane@example.com",
-    "password": "securepassword123"
-  }
+  { "email": "jane@example.com", "password": "securepassword123" }
   ```
 - **Response (200 OK)**:
   ```json
-  {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": "603d27f8a1fd876c12345678",
-      "name": "Jane Doe",
-      "email": "jane@example.com"
-    }
-  }
+  { "token": "eyJhbGci...", "user": { "id": "603d27f8a1fd876c12345678", "name": "Jane Doe", "email": "jane@example.com" } }
   ```
-- **Authentication Error (401 Unauthorized)**:
+
+---
+
+## 3. Resume Routes (`/api/resume`)
+
+### A. Upload & Parse Resume
+- **URL**: `/api/resume/upload`
+- **Method**: `POST`
+- **Content-Type**: `multipart/form-data`
+- **Body**: File appended with key `"resume"` (supports `.pdf`, `.docx`, `.txt`).
+- **Response (201 Created)**:
   ```json
   {
-    "message": "Invalid email or password"
+    "message": "Resume uploaded and parsed successfully",
+    "resume": {
+      "id": "603d27f8a1fd876c00000001",
+      "fileName": "resume.pdf",
+      "fileType": "pdf",
+      "fileSize": 120560,
+      "parsedProfile": {
+        "name": "Jane Doe",
+        "email": "jane@example.com",
+        "skills": ["React", "CSS", "Node.js"],
+        "education": [],
+        "projects": [],
+        "experience": []
+      },
+      "isDefault": true,
+      "uploadedAt": "2026-06-24T00:00:00.000Z"
+    }
   }
   ```
 
 ---
 
-## 4. Jobs Routes (`/api/jobs`)
+## 4. Job Analysis Routes (`/api/jobs`)
 
-### A. Submit & Analyze Job URL
-Scrapes the target job description and extracts details using AI.
+### A. Analyze Job URL
 - **URL**: `/api/jobs/analyze`
 - **Method**: `POST`
-- **Auth Required**: Yes
 - **Request Body**:
   ```json
-  {
-    "url": "https://www.linkedin.com/jobs/view/123456789"
-  }
+  { "url": "https://linkedin.com/jobs/view/123456789" }
   ```
-- **Response (201 Created)**:
+- **Response (200 OK)**:
   ```json
   {
-    "message": "Job analyzed and saved successfully",
+    "message": "Job analyzed successfully",
     "job": {
-      "id": "603d27f8a1fd876c87654321",
-      "sourceUrl": "https://www.linkedin.com/jobs/view/123456789",
-      "platform": "linkedin",
-      "title": "Software Engineer",
+      "_id": "603d27f8a1fd876c87654321",
+      "title": "React Developer",
       "company": "Tech Corp",
-      "location": "San Francisco, CA",
-      "jobType": "hybrid",
-      "skills": ["React", "Node.js", "MongoDB"],
-      "responsibilities": ["Design APIs", "Maintain frontend interfaces"],
-      "experienceRequired": "3+ Years",
-      "keywords": ["React", "Express", "NoSQL"],
-      "description": "A role building high-performance web applications...",
+      "platform": "linkedin",
+      "location": "Remote",
+      "skills": ["React", "HTML5", "CSS3"],
+      "responsibilities": ["Design user interfaces", "Implement dynamic components"],
       "status": "analyzed"
     }
   }
@@ -151,133 +138,114 @@ Scrapes the target job description and extracts details using AI.
 
 ---
 
-## 5. Contact Discovery Routes (`/api/contacts`)
+## 5. Email Generation Routes (`/api/generate`)
 
-### A. Discover Contacts for a Job
-Automatically researches company and discovers ranked stakeholder contact info.
-- **URL**: `/api/contacts/discover/:jobId`
+### A. Run Full Pipeline
+- **URL**: `/api/generate/full-pipeline`
 - **Method**: `POST`
-- **Auth Required**: Yes
+- **Request Body**:
+  ```json
+  {
+    "jobUrl": "https://linkedin.com/jobs/view/123456789",
+    "resumeId": "603d27f8a1fd876c00000001",
+    "userSummary": "I recently won a hackathon",
+    "instructions": "Make it sound startup-friendly"
+  }
+  ```
 - **Response (200 OK)**:
   ```json
   {
-    "message": "Contacts discovered successfully",
-    "company": {
-      "name": "Tech Corp",
-      "industry": "Software",
-      "website": "https://techcorp.com",
-      "companySize": "1000-5000 employees",
-      "techStack": ["React", "Node.js", "AWS"],
-      "insightSummary": "Tech Corp specializes in building Cloud SaaS tools..."
-    },
-    "contacts": [
-      {
-        "id": "603d27f8a1fd876c11223344",
-        "fullName": "Alice Smith",
-        "role": "Lead Recruiter",
-        "department": "Talent Acquisition",
-        "email": "alice.smith@techcorp.com",
-        "emailStatus": "available",
-        "confidenceScore": 95,
-        "relevanceScore": 92,
-        "isSuggested": false,
-        "saved": false
+    "message": "Email generated successfully",
+    "email": {
+      "_id": "603d27f8a1fd876c99999999",
+      "subject": "Application for React Developer Role",
+      "content": "Hi Team, I noticed your post...",
+      "htmlContent": "<p>Hi Team,</p>",
+      "tone": "professional",
+      "qualityScores": {
+        "overallScore": 85,
+        "professionalismScore": 90,
+        "personalizationScore": 80,
+        "grammarScore": 95,
+        "readabilityScore": 85,
+        "recruiterAppealScore": 80,
+        "ctaScore": 80
       }
+    },
+    "jobAnalysis": { ... },
+    "matchAnalysis": {
+      "matchScore": 88,
+      "matchingSkills": ["React"],
+      "missingSkills": ["TypeScript"],
+      "strengths": ["Hackathon winner"],
+      "weaknesses": ["No TypeScript experience"]
+    },
+    "qualityScores": { ... },
+    "subjectOptions": ["Subject 1", "Subject 2"]
+  }
+  ```
+
+### B. AI Chat Edit
+- **URL**: `/api/generate/edit`
+- **Method**: `POST`
+- **Request Body**:
+  ```json
+  {
+    "emailId": "603d27f8a1fd876c99999999",
+    "instruction": "Mention my hackathon win",
+    "chatHistory": [
+      { "role": "user", "content": "Mention my hackathon win" }
     ]
   }
   ```
-
----
-
-## 6. Outreach Routes (`/api/outreach`)
-
-### A. Generate Outreach Package
-- **URL**: `/api/outreach/generate`
-- **Method**: `POST`
-- **Auth Required**: Yes
-- **Request Body**:
-  ```json
-  {
-    "jobId": "603d27f8a1fd876c87654321",
-    "contactId": "603d27f8a1fd876c11223344",
-    "outreachType": "job_application",
-    "additionalInstructions": "Highlight my 3 years of React experience"
-  }
-  ```
 - **Response (200 OK)**:
   ```json
   {
-    "message": "Outreach messages generated and saved as draft.",
-    "outreach": {
-      "subjectLine": "Software Engineer Role - 3 Years React Experience",
-      "coldEmail": "Hi Alice, I noticed your opening...",
-      "coldEmailHtml": "<p>Hi Alice,</p><p>I noticed...</p>",
-      "linkedinMessage": "Hi Alice, I saw your hiring post...",
-      "linkedinFollowUp": "Hi Alice, following up on...",
-      "referralRequestEmail": "Hi Alice, I would love a referral...",
-      "referralRequestEmailHtml": "<p>Hi Alice,</p>...",
-      "shortNetworkingMessage": "Hi Alice..."
-    },
-    "scores": {
-      "overallScore": 88,
-      "improvements": ["Shorten the introduction paragraph"]
-    },
-    "emailId": "603d27f8a1fd876c22334455",
-    "recipientEmail": "alice.smith@techcorp.com"
+    "message": "Email updated",
+    "email": { ... },
+    "changeDescription": "Added detail highlighting your hackathon victory."
   }
   ```
 
-### B. Send Outreach Email via SMTP
-- **URL**: `/api/outreach/send`
+### C. Change Tone Preset
+- **URL**: `/api/generate/tone`
 - **Method**: `POST`
-- **Auth Required**: Yes
 - **Request Body**:
   ```json
-  {
-    "emailId": "603d27f8a1fd876c22334455"
-  }
+  { "emailId": "603d27f8a1fd876c99999999", "tone": "startup" }
   ```
 - **Response (200 OK)**:
   ```json
-  {
-    "message": "Outreach email sent successfully.",
-    "messageId": "<abcd123@gmail.com>"
-  }
-  ```
-- **Error Response (500 Server Error)**:
-  ```json
-  {
-    "message": "Failed to send outreach email via SMTP.",
-    "error": "Authentication Failed (Invalid Credentials)"
-  }
+  { "message": "Tone changed to startup", "email": { ... } }
   ```
 
 ---
 
-## 7. Profile Routes (`/api/profile`)
+## 6. Saved Drafts Routes (`/api/drafts`)
 
-### A. Match Resume against Job Analysis
-- **URL**: `/api/profile/match-resume`
-- **Method**: `POST`
-- **Auth Required**: Yes
-- **Request Body**:
-  ```json
-  {
-    "jobId": "603d27f8a1fd876c87654321"
-  }
-  ```
+- **`POST /api/drafts`**: Saves current email as a draft.
+- **`GET /api/drafts`**: Lists all saved drafts.
+- **`GET /api/drafts/:id`**: Gets a single draft.
+- **`PUT /api/drafts/:id`**: Updates an existing draft's contents.
+- **`DELETE /api/drafts/:id`**: Deletes a draft.
+
+---
+
+## 7. Dashboard Metrics Route (`/api/dashboard`)
+
+### A. Get Stats
+- **URL**: `/api/dashboard/stats`
+- **Method**: `GET`
 - **Response (200 OK)**:
   ```json
   {
-    "message": "Resume matched successfully",
-    "match": {
-      "matchScore": 85,
-      "matchingSkills": ["React", "CSS", "REST APIs"],
-      "missingSkills": ["TypeScript", "Docker"],
-      "recommendedImprovements": ["Add a Docker project to your portfolio"],
-      "suggestedProjects": ["Create a microservices application with Docker Compose"],
-      "suggestedKeywords": ["Containerization", "RESTful Architecture"],
-      "summary": "The candidate has a solid frontend foundation matching the core requirements, but lacks containerization skills mentioned in the job description."
-    }
+    "stats": {
+      "totalEmails": 15,
+      "totalJobs": 12,
+      "totalResumes": 2,
+      "avgMatchScore": 82
+    },
+    "recentEmails": [ ... ],
+    "recentJobs": [ ... ]
   }
   ```

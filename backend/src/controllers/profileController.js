@@ -1,7 +1,5 @@
 import { User } from "../models/User.js";
-import { Job } from "../models/Job.js";
-import { ResumeMatchingAgent } from "../agents/ResumeMatchingAgent.js";
-const resumeMatchingAgent = new ResumeMatchingAgent();
+
 export const updateProfile = async (req, res) => {
   try {
     const userId = req.user?.id;
@@ -40,42 +38,7 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ message: "Failed to update user profile." });
   }
 };
-export const matchResume = async (req, res) => {
-  try {
-    const userId = req.user?.id;
-    const { jobId } = req.body;
-    if (!jobId) {
-      res.status(400).json({ message: "jobId is required for resume matching." });
-      return;
-    }
-    const user = await User.findById(userId);
-    if (!user) {
-      res.status(404).json({ message: "User not found." });
-      return;
-    }
-    const job = await Job.findOne({ _id: jobId, userId });
-    if (!job) {
-      res.status(404).json({ message: "Job not found." });
-      return;
-    }
-    const result = await resumeMatchingAgent.match({
-      resumeText: user.resumeText || "",
-      userSkills: user.skills,
-      userExperience: user.experience,
-      jobTitle: job.title,
-      jobDescription: job.description,
-      jobSkills: job.skills,
-      jobExperience: job.experienceRequired
-    });
-    res.json({
-      message: "Resume matched successfully",
-      match: result
-    });
-  } catch (error) {
-    console.error("Resume match error:", error);
-    res.status(500).json({ message: error.message || "Failed to match resume." });
-  }
-};
+
 export const getFullProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user?.id);
@@ -103,3 +66,4 @@ export const getFullProfile = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch user profile." });
   }
 };
+

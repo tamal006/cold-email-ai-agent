@@ -52,6 +52,8 @@ Return ONLY valid JSON with exactly these fields:
 - "description": string - A concise 2-3 sentence summary of the role
 - "qualifications": string[] - Required qualifications and education
 - "benefits": string[] - Listed benefits if any
+- "preferredQualifications": string[] - Nice-to-have qualifications (not strictly required)
+- "applicationDeadline": string or null - Application deadline if mentioned
 
 Guidelines:
 - Extract as much information as possible from the content
@@ -96,6 +98,8 @@ Return ONLY valid JSON.`;
       description: parsed.description || "",
       qualifications: parsed.qualifications || [],
       benefits: parsed.benefits || [],
+      preferredQualifications: parsed.preferredQualifications || [],
+      applicationDeadline: parsed.applicationDeadline || null,
       platform
     };
   }

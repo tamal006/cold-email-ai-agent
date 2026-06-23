@@ -1,68 +1,188 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { format } from "date-fns";
+import { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
+import { Loader2, ArrowLeft, Copy, Check, FileEdit } from "lucide-react";
 import { toast } from "sonner";
-import { ArrowLeft, Trash2, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { QualityScore } from "@/components/email/QualityScore";
+import { QualityScore } from "@/components/generate/QualityScore";
 import { emailService } from "@/services/emailService";
-import { agentService } from "@/services/agentService";
-const statusColors = {
-  sent: "success",
-  draft: "warning",
-  failed: "destructive"
-};
+
 export default function EmailDetailPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [email, setEmail] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   useEffect(() => {
-    const fetchEmail = async () => {
-      if (!id) return;
-      try {
-        const data = await emailService.getEmailById(id);
-        setEmail(data.email);
-      } catch {
-        toast.error("Email not found");
-        navigate("/history");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchEmail();
-  }, [id, navigate]);
-  const handleSend = async () => {
-    if (!email?._id) return;
-    setSending(true);
+    loadEmail();
+  }, [id]);
+
+  const loadEmail = async () => {
     try {
-      await agentService.sendEmail(email._id);
-      setEmail({ ...email, status: "sent", sentAt: (/* @__PURE__ */ new Date()).toISOString() });
-      toast.success("Email sent successfully!");
+      const { data } = await emailService.get(id);
+      setEmail(data.email);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to send email");
+      toast.error("Failed to load email");
     } finally {
-      setSending(false);
+      setLoading(false);
     }
   };
-  const handleDelete = async () => {
-    if (!email?._id) return;
+
+  const handleCopy = async () => {
     try {
-      await emailService.deleteEmail(email._id);
-      toast.success("Email deleted");
-      navigate("/history");
+      await navigator.clipboard.writeText(`Subject: ${email.subject}\n\n${email.content}`);
+      setCopied(true);
+      toast.success("Copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Failed to delete email");
+      toast.error("Failed to copy");
     }
   };
+
   if (loading) {
-    return /* @__PURE__ */ React.createElement("div", { className: "max-w-3xl mx-auto space-y-4" }, /* @__PURE__ */ React.createElement(Skeleton, { className: "h-10 w-32" }), /* @__PURE__ */ React.createElement(Skeleton, { className: "h-[400px] rounded-xl" }));
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
-  if (!email) return null;
-  return /* @__PURE__ */ React.createElement("div", { className: "max-w-3xl mx-auto space-y-6 animate-fade-in" }, /* @__PURE__ */ React.createElement(Button, { variant: "ghost", onClick: () => navigate("/history"), className: "gap-2" }, /* @__PURE__ */ React.createElement(ArrowLeft, { className: "h-4 w-4" }), "Back to History"), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(CardHeader, { className: "border-b" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement(CardTitle, { className: "text-xl" }, email.subject), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3 text-sm text-muted-foreground" }, /* @__PURE__ */ React.createElement("span", null, "To: ", email.recipientName || email.recipientEmail), /* @__PURE__ */ React.createElement(Badge, { variant: statusColors[email.status] || "default" }, email.status))), email.qualityScore !== void 0 && /* @__PURE__ */ React.createElement(QualityScore, { score: email.qualityScore, size: "sm" }))), /* @__PURE__ */ React.createElement(CardContent, { className: "p-6" }, /* @__PURE__ */ React.createElement("div", { className: "grid gap-3 md:grid-cols-2 mb-6" }, email.companyName && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted-foreground" }, "Company"), /* @__PURE__ */ React.createElement("p", { className: "text-sm font-medium" }, email.companyName)), email.jobPosition && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted-foreground" }, "Position"), /* @__PURE__ */ React.createElement("p", { className: "text-sm font-medium" }, email.jobPosition)), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted-foreground" }, "Tone"), /* @__PURE__ */ React.createElement("p", { className: "text-sm font-medium capitalize" }, email.tone)), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted-foreground" }, "Created"), /* @__PURE__ */ React.createElement("p", { className: "text-sm font-medium" }, format(new Date(email.createdAt), "MMM d, yyyy h:mm a"))), email.sentAt && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted-foreground" }, "Sent"), /* @__PURE__ */ React.createElement("p", { className: "text-sm font-medium" }, format(new Date(email.sentAt), "MMM d, yyyy h:mm a")))), /* @__PURE__ */ React.createElement(Separator, { className: "my-4" }), /* @__PURE__ */ React.createElement("div", { className: "prose prose-sm dark:prose-invert max-w-none" }, /* @__PURE__ */ React.createElement("p", { className: "whitespace-pre-wrap leading-relaxed" }, email.content)), /* @__PURE__ */ React.createElement(Separator, { className: "my-4" }), /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement(Button, { variant: "destructive", size: "sm", onClick: handleDelete, className: "gap-2" }, /* @__PURE__ */ React.createElement(Trash2, { className: "h-4 w-4" }), "Delete"), email.status === "draft" && /* @__PURE__ */ React.createElement(Button, { onClick: handleSend, disabled: sending, className: "gap-2" }, sending ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(Loader2, { className: "h-4 w-4 animate-spin" }), "Sending...") : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(Send, { className: "h-4 w-4" }), "Send Now"))))));
+
+  if (!email) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-muted-foreground">Email not found</p>
+        <Link to="/history">
+          <Button variant="outline" className="mt-4">
+            Back to History
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link to="/history">
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-lg font-bold">{email.jobTitle || "Email Detail"}</h1>
+            <p className="text-xs text-muted-foreground">{email.company}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link to={`/generate?emailId=${email._id}`}>
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+              <FileEdit className="h-3.5 w-3.5" />
+              Edit Email
+            </Button>
+          </Link>
+          <Button variant="outline" size="sm" onClick={handleCopy} className="gap-1.5 text-xs">
+            {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? "Copied!" : "Copy Email"}
+          </Button>
+        </div>
+      </div>
+
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Email Content */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Subject */}
+          <Card className="border-border/30 bg-card/50">
+            <CardContent className="py-3 px-4">
+              <p className="text-xs text-muted-foreground mb-1">Subject</p>
+              <p className="text-sm font-medium">{email.subject}</p>
+            </CardContent>
+          </Card>
+
+          {/* Body */}
+          <Card className="border-border/30 bg-card/50">
+            <CardContent className="py-4 px-5">
+              <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+                {email.content}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Meta */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary" className="text-xs capitalize">
+              {email.tone || "professional"}
+            </Badge>
+            <Badge
+              variant={email.status === "sent" ? "default" : "secondary"}
+              className={`text-xs capitalize ${
+                email.status === "sent" ? "bg-emerald-500/10 text-emerald-400" : ""
+              }`}
+            >
+              {email.status}
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              Created: {new Date(email.createdAt).toLocaleString()}
+            </span>
+          </div>
+        </div>
+
+        {/* Sidebar - Scores & Match */}
+        <div className="space-y-4">
+          <QualityScore scores={email.qualityScores} />
+
+          {/* Match Info */}
+          {email.matchAnalysis?.matchScore > 0 && (
+            <Card className="border-border/30 bg-card/50">
+              <CardContent className="py-4 px-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold">Match Score</h3>
+                  <span
+                    className={`text-lg font-bold ${
+                      email.matchAnalysis.matchScore >= 80
+                        ? "text-emerald-400"
+                        : email.matchAnalysis.matchScore >= 60
+                        ? "text-amber-400"
+                        : "text-red-400"
+                    }`}
+                  >
+                    {email.matchAnalysis.matchScore}%
+                  </span>
+                </div>
+
+                {email.matchAnalysis.matchingSkills?.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-medium text-muted-foreground mb-1">Matching</p>
+                    <div className="flex flex-wrap gap-1">
+                      {email.matchAnalysis.matchingSkills.map((s, i) => (
+                        <Badge key={i} className="text-[9px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                          {s}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {email.matchAnalysis.missingSkills?.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-medium text-muted-foreground mb-1">Missing</p>
+                    <div className="flex flex-wrap gap-1">
+                      {email.matchAnalysis.missingSkills.map((s, i) => (
+                        <Badge key={i} variant="outline" className="text-[9px] border-red-500/30 text-red-400">
+                          {s}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -1,70 +1,227 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Send, TrendingUp, Calendar, PenSquare, FileSearch, ArrowRightLeft, Sparkles, Compass } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Mail, Briefcase, FileText, Save, TrendingUp, Sparkles, Loader2, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { RecentEmails } from "@/components/dashboard/RecentEmails";
-import { ActivityChart } from "@/components/dashboard/ActivityChart";
-import { useEmails, useEmailStats } from "@/hooks/useEmails";
-import { trackerService } from "@/services/trackerService";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
+import { dashboardService } from "@/services/dashboardService";
+
 export default function DashboardPage() {
-  const navigate = useNavigate();
-  const { stats, activity, loading: statsLoading, fetchStats } = useEmailStats();
-  const { emails, loading: emailsLoading, fetchEmails } = useEmails();
-  const [trackedCount, setTrackedCount] = useState(0);
-  const [interviewsCount, setInterviewsCount] = useState(0);
+  const { user } = useAuth();
+  const [stats, setStats] = useState(null);
+  const [recentEmails, setRecentEmails] = useState([]);
+  const [recentJobs, setRecentJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    fetchStats();
-    fetchEmails({ limit: 5 });
-    fetchTrackerSummary();
-  }, [fetchStats, fetchEmails]);
-  const fetchTrackerSummary = async () => {
+    loadDashboard();
+  }, []);
+
+  const loadDashboard = async () => {
     try {
-      const data = await trackerService.getAnalytics();
-      setTrackedCount(data.stats.totalTracked);
-      setInterviewsCount(data.statusCounts.interview_scheduled || 0);
+      const { data } = await dashboardService.getStats();
+      setStats(data.stats);
+      setRecentEmails(data.recentEmails || []);
+      setRecentJobs(data.recentJobs || []);
     } catch (error) {
-      console.error("Fetch tracker summary error:", error);
+      console.error("Dashboard load error:", error);
+    } finally {
+      setLoading(false);
     }
   };
-  return /* @__PURE__ */ React.createElement("div", { className: "space-y-8 max-w-6xl mx-auto px-4 py-6" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-col md:flex-row md:items-center md:justify-between pb-6 border-b border-zinc-900 gap-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h2", { className: "text-2xl font-black tracking-tight text-zinc-100 flex items-center gap-2" }, "Welcome back \u{1F44B}"), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-zinc-400 mt-1" }, "Here is the status of your job outreach campaigns and application pipeline.")), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2" }, /* @__PURE__ */ React.createElement(
-    Button,
+
+  const statCards = [
     {
-      onClick: () => navigate("/jobs"),
-      className: "bg-zinc-100 text-zinc-950 hover:bg-zinc-200"
+      label: "Emails Generated",
+      value: stats?.totalEmails || 0,
+      icon: Mail,
+      color: "text-blue-400",
+      bg: "bg-blue-500/10",
     },
-    /* @__PURE__ */ React.createElement(FileSearch, { className: "mr-2 h-4 w-4" }),
-    " Analyze Job URL"
-  ), /* @__PURE__ */ React.createElement(
-    Button,
     {
-      onClick: () => navigate("/create"),
-      variant: "outline",
-      className: "border-zinc-800 text-zinc-300 hover:bg-zinc-900"
+      label: "Jobs Analyzed",
+      value: stats?.totalJobs || 0,
+      icon: Briefcase,
+      color: "text-purple-400",
+      bg: "bg-purple-500/10",
     },
-    /* @__PURE__ */ React.createElement(PenSquare, { className: "mr-2 h-4 w-4" }),
-    " New Email"
-  ))), /* @__PURE__ */ React.createElement("div", { className: "grid gap-4 grid-cols-2 lg:grid-cols-4" }, /* @__PURE__ */ React.createElement(Card, { className: "border border-zinc-800 bg-gradient-to-br from-indigo-950/10 via-zinc-950 to-zinc-950/50" }, /* @__PURE__ */ React.createElement(CardContent, { className: "p-5 flex items-start justify-between" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-[10px] font-bold uppercase tracking-wider text-zinc-500" }, "Applications"), /* @__PURE__ */ React.createElement("h3", { className: "text-3xl font-extrabold text-zinc-100" }, trackedCount), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-zinc-500" }, "Tracked in pipeline")), /* @__PURE__ */ React.createElement("div", { className: "p-2.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl" }, /* @__PURE__ */ React.createElement(Compass, { className: "h-5 w-5" })))), /* @__PURE__ */ React.createElement(Card, { className: "border border-zinc-800 bg-gradient-to-br from-purple-950/10 via-zinc-950 to-zinc-950/50" }, /* @__PURE__ */ React.createElement(CardContent, { className: "p-5 flex items-start justify-between" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-[10px] font-bold uppercase tracking-wider text-zinc-500" }, "Outreach Emails"), /* @__PURE__ */ React.createElement("h3", { className: "text-3xl font-extrabold text-zinc-100" }, stats?.totalSent ?? 0), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-zinc-500" }, "Successfully sent")), /* @__PURE__ */ React.createElement("div", { className: "p-2.5 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-xl" }, /* @__PURE__ */ React.createElement(Send, { className: "h-5 w-5" })))), /* @__PURE__ */ React.createElement(Card, { className: "border border-zinc-800 bg-gradient-to-br from-emerald-950/10 via-zinc-950 to-zinc-950/50" }, /* @__PURE__ */ React.createElement(CardContent, { className: "p-5 flex items-start justify-between" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-[10px] font-bold uppercase tracking-wider text-zinc-500" }, "Success Rate"), /* @__PURE__ */ React.createElement("h3", { className: "text-3xl font-extrabold text-zinc-100" }, stats?.successRate ?? 100, "%"), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-zinc-500" }, "Email delivery")), /* @__PURE__ */ React.createElement("div", { className: "p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl" }, /* @__PURE__ */ React.createElement(TrendingUp, { className: "h-5 w-5" })))), /* @__PURE__ */ React.createElement(Card, { className: "border border-zinc-800 bg-gradient-to-br from-yellow-950/10 via-zinc-950 to-zinc-950/50" }, /* @__PURE__ */ React.createElement(CardContent, { className: "p-5 flex items-start justify-between" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-[10px] font-bold uppercase tracking-wider text-zinc-500" }, "Scheduled Interviews"), /* @__PURE__ */ React.createElement("h3", { className: "text-3xl font-extrabold text-zinc-100" }, interviewsCount), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-zinc-500" }, "Interviews pending")), /* @__PURE__ */ React.createElement("div", { className: "p-2.5 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 rounded-xl" }, /* @__PURE__ */ React.createElement(Calendar, { className: "h-5 w-5" }))))), /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("h3", { className: "text-sm font-bold text-zinc-400 uppercase tracking-wider" }, "Quick Actions"), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-6" }, /* @__PURE__ */ React.createElement(
-    Card,
     {
-      className: "border border-zinc-800 bg-zinc-950/40 hover:bg-zinc-900/10 transition-all duration-300 cursor-pointer group",
-      onClick: () => navigate("/jobs")
+      label: "Resumes",
+      value: stats?.totalResumes || 0,
+      icon: FileText,
+      color: "text-emerald-400",
+      bg: "bg-emerald-500/10",
     },
-    /* @__PURE__ */ React.createElement(CardContent, { className: "p-5 space-y-3" }, /* @__PURE__ */ React.createElement("div", { className: "p-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg w-10 h-10 flex items-center justify-center group-hover:scale-105 transition-transform" }, /* @__PURE__ */ React.createElement(FileSearch, { className: "h-5 w-5" })), /* @__PURE__ */ React.createElement("h4", { className: "font-bold text-zinc-200" }, "Analyze Job Posting"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-zinc-500 leading-relaxed" }, "Paste public URLs from LinkedIn, Naukri, or careers pages to pull requirements and match resume."))
-  ), /* @__PURE__ */ React.createElement(
-    Card,
     {
-      className: "border border-zinc-800 bg-zinc-950/40 hover:bg-zinc-900/10 transition-all duration-300 cursor-pointer group",
-      onClick: () => navigate("/tracker")
+      label: "Avg Match Score",
+      value: `${stats?.avgMatchScore || 0}%`,
+      icon: TrendingUp,
+      color: "text-amber-400",
+      bg: "bg-amber-500/10",
     },
-    /* @__PURE__ */ React.createElement(CardContent, { className: "p-5 space-y-3" }, /* @__PURE__ */ React.createElement("div", { className: "p-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-lg w-10 h-10 flex items-center justify-center group-hover:scale-105 transition-transform" }, /* @__PURE__ */ React.createElement(ArrowRightLeft, { className: "h-5 w-5" })), /* @__PURE__ */ React.createElement("h4", { className: "font-bold text-zinc-200" }, "Job Pipeline Board"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-zinc-500 leading-relaxed" }, "Track application progress, update statuses (Saved \u2192 Outreach \u2192 Interview \u2192 Offers), and manage schedules."))
-  ), /* @__PURE__ */ React.createElement(
-    Card,
-    {
-      className: "border border-zinc-800 bg-zinc-950/40 hover:bg-zinc-900/10 transition-all duration-300 cursor-pointer group",
-      onClick: () => navigate("/analytics")
-    },
-    /* @__PURE__ */ React.createElement(CardContent, { className: "p-5 space-y-3" }, /* @__PURE__ */ React.createElement("div", { className: "p-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg w-10 h-10 flex items-center justify-center group-hover:scale-105 transition-transform" }, /* @__PURE__ */ React.createElement(Sparkles, { className: "h-5 w-5" })), /* @__PURE__ */ React.createElement("h4", { className: "font-bold text-zinc-200" }, "Outreach Analytics"), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-zinc-500 leading-relaxed" }, "Check email delivery health, conversion funnels, response probabilities, and referral success rate metrics."))
-  ))), /* @__PURE__ */ React.createElement("div", { className: "grid gap-6 lg:grid-cols-2" }, /* @__PURE__ */ React.createElement(ActivityChart, { data: activity }), emailsLoading ? /* @__PURE__ */ React.createElement(Skeleton, { className: "h-[350px] rounded-xl" }) : /* @__PURE__ */ React.createElement(RecentEmails, { emails })));
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Welcome Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">
+            Welcome back, <span className="gradient-text">{user?.name?.split(" ")[0] || "User"}</span>
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Here's your email generation overview
+          </p>
+        </div>
+        <Link to="/generate">
+          <Button className="gap-2">
+            <Sparkles className="h-4 w-4" />
+            Generate Email
+          </Button>
+        </Link>
+      </div>
+
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {statCards.map((stat, i) => (
+          <Card
+            key={i}
+            className="border-border/30 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-200 hover:scale-[1.02]"
+            style={{ animationDelay: `${i * 100}ms` }}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className={`h-9 w-9 rounded-lg ${stat.bg} flex items-center justify-center`}>
+                  <stat.icon className={`h-4.5 w-4.5 ${stat.color}`} />
+                </div>
+              </div>
+              <p className="text-2xl font-bold">{stat.value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      {stats?.totalResumes === 0 && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="py-6">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <FileText className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold">Upload Your Resume First</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Upload a resume to start generating personalized application emails
+                </p>
+              </div>
+              <Link to="/resume">
+                <Button size="sm" className="gap-1.5">
+                  Upload <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Recent Emails */}
+        <Card className="border-border/30 bg-card/50 backdrop-blur-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <Mail className="h-4 w-4 text-blue-400" />
+                Recent Emails
+              </h2>
+              <Link to="/history" className="text-xs text-primary hover:underline">
+                View all
+              </Link>
+            </div>
+            {recentEmails.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">
+                No emails generated yet
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {recentEmails.map((email) => (
+                  <Link
+                    key={email._id}
+                    to={`/history/${email._id}`}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-accent/50 transition-colors group"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium truncate group-hover:text-primary transition-colors">
+                        {email.jobTitle || email.subject}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {email.company}
+                      </p>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={`text-[9px] shrink-0 ${
+                        email.matchAnalysis?.matchScore >= 80
+                          ? "text-emerald-400 border-emerald-500/30"
+                          : "text-amber-400 border-amber-500/30"
+                      }`}
+                    >
+                      {email.matchAnalysis?.matchScore || 0}%
+                    </Badge>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Jobs */}
+        <Card className="border-border/30 bg-card/50 backdrop-blur-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-purple-400" />
+                Recent Jobs
+              </h2>
+              <Link to="/jobs" className="text-xs text-primary hover:underline">
+                View all
+              </Link>
+            </div>
+            {recentJobs.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">
+                No jobs analyzed yet
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {recentJobs.map((job) => (
+                  <div
+                    key={job._id}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium truncate">{job.title}</p>
+                      <p className="text-[10px] text-muted-foreground">{job.company}</p>
+                    </div>
+                    <Badge variant="secondary" className="text-[9px] capitalize shrink-0">
+                      {job.platform}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }

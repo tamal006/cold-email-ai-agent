@@ -1,10 +1,12 @@
 import { Router } from "express";
-import { analyzeJob, getJobs, getJobById, deleteJob } from "../controllers/jobController.js";
-import { auth } from "../middleware/auth.js";
+import { authenticate } from "../middleware/auth.js";
+import { analyzeJob, listJobs, getJob, deleteJob } from "../controllers/jobController.js";
+
 const router = Router();
-router.use(auth);
-router.post("/analyze", analyzeJob);
-router.get("/", getJobs);
-router.get("/:id", getJobById);
-router.delete("/:id", deleteJob);
+
+router.post("/analyze", authenticate, analyzeJob);
+router.get("/list", authenticate, listJobs);
+router.get("/:id", authenticate, getJob);
+router.delete("/:id", authenticate, deleteJob);
+
 export default router;

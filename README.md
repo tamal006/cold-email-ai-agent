@@ -1,39 +1,51 @@
-# ColdMail AI Agent 📧🤖
+# MailCraft AI 📧🤖
 
-A production-ready full-stack SaaS application that uses an AI agent to generate, validate, and send professional cold emails.
+A production-ready full-stack SaaS application that generates highly personalized cold outreach emails for job applications by matching an uploaded resume (PDF/DOCX/TXT) against target job posting URLs (LinkedIn, Naukri, Internshala, corporate career pages, etc.).
 
-## Tech Stack
+---
 
-- **Frontend**: React 18 + TypeScript + Tailwind CSS + ShadCN UI + Vite
-- **Backend**: Node.js + Express + TypeScript
+## 🚀 Tech Stack
+
+- **Frontend**: React 18 + Tailwind CSS v3 + Radix UI / ShadCN + Vite
+- **Backend**: Node.js + Express (ES Modules)
 - **Database**: MongoDB (Mongoose)
-- **AI**: OpenAI GPT-4o
-- **Email**: Nodemailer + Gmail SMTP
+- **AI**: Groq API + Llama 3.3 70B
+- **File Parsing**: PDFParse + Mammoth (DOCX)
 
-## Features
+---
 
-- 🤖 AI-powered email generation with quality validation
-- 📊 Dashboard with stats and activity charts
-- 📧 One-click email sending via Gmail SMTP
-- ✅ Quality scoring (grammar, readability, professionalism, spam check)
-- 📝 Draft saving and email history
-- 🎯 Subject line optimizer (5 alternatives)
-- 🎨 Email tone variations (Formal, Friendly, Startup)
-- 📋 Pre-built templates (Internship, Job, Freelance, Collaboration, Networking)
-- 🔐 JWT authentication
-- 🌙 Dark mode
-- 📱 Responsive design
+## ✨ Features
 
-## Prerequisites
+- 🤖 **Multi-Agent Pipeline**: Scraping → Resume Parsing → Candidate Matching → Copywriting → Quality Grading.
+- 📄 **Resume Parsing**: Drag-and-drop resume uploader extracting details automatically.
+- ⚡ **ATS-Style Alignment**: Matching score, matching/missing skills lists, strengths, and weaknesses.
+- 🎨 **One-Click Tone Converter**: 9 tone presets (`startup style`, `corporate`, `minimal`, etc.) to instantly rewrite outreach emails.
+- ✏️ **AI Chat Editor**: Refine output copy using natural language chat commands.
+- 📋 **Quality Auditing**: Breakdown of CTA strength, spam risk, personalization, readability, and grammar.
+- 📝 **Subject Line Optimizer**: Generates 5 alternative subject line options.
+- 🌙 **Dark Mode & Premium UI**: Responsive glassmorphism interface.
 
-- Node.js 18+
+---
+
+## 📦 Directory Structure
+
+- `/backend`: Node.js API server running on port 5000. Uses Mongoose models, Express controllers, and AI Agents/Tools.
+- `/frontend`: React client running on port 5173. Built using Vite, Tailwind, and ShadCN.
+- `/docs`: Comprehensive architectural, database, agent, and API guides.
+
+---
+
+## 🛠️ Prerequisites
+
+- Node.js 20+
 - MongoDB (local or Atlas)
-- OpenAI API key
-- Gmail account with App Password
+- Groq API Key
 
-## Installation
+---
 
-### 1. Clone and install
+## ⚙️ Local Installation
+
+### 1. Install Dependencies
 
 ```bash
 # Backend
@@ -45,36 +57,25 @@ cd ../frontend
 npm install
 ```
 
-### 2. Configure environment
+### 2. Configure Environment
+
+Create a `.env` file in the `backend/` directory:
 
 ```bash
 cd backend
 cp .env.example .env
 ```
 
-Edit `.env` with your values:
+Edit `backend/.env` with your values:
 
 ```env
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/coldmail-agent
 JWT_SECRET=your-secure-random-string-here
-OPENAI_API_KEY=sk-your-openai-api-key
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-gmail-app-password
-FROM_EMAIL=your-email@gmail.com
-FROM_NAME=ColdMail AI Agent
+GROQ_API_KEY=gsk_your-groq-api-key-here
 ```
 
-### 3. Gmail App Password Setup
-
-1. Enable 2-Factor Authentication on your Google account
-2. Go to https://myaccount.google.com/apppasswords
-3. Generate an App Password for "Mail"
-4. Use that password as `SMTP_PASS`
-
-### 4. Start the application
+### 3. Run Development Servers
 
 ```bash
 # Terminal 1 - Backend
@@ -86,60 +87,13 @@ cd frontend
 npm run dev
 ```
 
-### 5. Open the app
+Visit **`http://localhost:5173`** in your browser.
 
-Visit http://localhost:5173
+---
 
-## API Endpoints
+## 🛡️ Security
 
-### Auth
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login
-- `GET /api/auth/profile` - Get current user (protected)
-
-### AI Agent
-- `POST /api/agent/generate` - Generate email via AI
-- `POST /api/agent/send` - Send email via SMTP
-- `POST /api/agent/draft` - Save/update draft
-- `POST /api/agent/variations` - Generate tone variations
-- `POST /api/agent/optimize-subject` - Generate alternative subjects
-
-### Emails
-- `GET /api/emails` - List emails (paginated, filterable)
-- `GET /api/emails/stats` - Dashboard statistics
-- `GET /api/emails/templates` - Get templates
-- `GET /api/emails/:id` - Get single email
-- `DELETE /api/emails/:id` - Delete email
-
-## Deployment
-
-### Production Build
-
-```bash
-# Backend
-cd backend
-npm run build
-npm start
-
-# Frontend
-cd frontend
-npm run build
-# Serve the dist/ folder with any static server
-```
-
-### Environment Variables for Production
-
-Set the same `.env` variables on your production server. Consider using:
-- MongoDB Atlas for the database
-- A proper JWT secret (32+ random characters)
-- SSL/TLS for all connections
-
-## Security Features
-
-- JWT Authentication with expiry
-- bcrypt password hashing (12 rounds)
-- Helmet security headers
-- Rate limiting (100 req/15min)
-- Input validation (express-validator)
-- CORS configuration
-- Environment variable isolation
+- **Bcrypt Hashing**: User credentials hashed with 12 rounds.
+- **JWT Authorization**: Authenticated API routes.
+- **Rate Limiting**: Protects endpoints from burst spikes.
+- **Helmet**: Strengthens HTTP header security.

@@ -1,105 +1,156 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Loader2, Mail, Trash2, Inbox, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { Search, Trash2, Eye, Filter } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useEmails } from "@/hooks/useEmails";
-const statusColors = {
-  sent: "success",
-  draft: "warning",
-  failed: "destructive"
-};
+import { emailService } from "@/services/emailService";
+
 export default function EmailHistoryPage() {
-  const navigate = useNavigate();
-  const { emails, total, totalPages, loading, fetchEmails, deleteEmail } = useEmails();
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
-  const [page, setPage] = useState(1);
+  const [emails, setEmails] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    fetchEmails({
-      search: search || void 0,
-      status: status === "all" ? void 0 : status,
-      page,
-      limit: 10
-    });
-  }, [search, status, page, fetchEmails]);
+    loadEmails();
+  }, []);
+
+  const loadEmails = async () => {
+    try {
+      const { data } = await emailService.list();
+      setEmails(data.emails || []);
+    } catch (error) {
+      toast.error("Failed to load emails");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDelete = async (id) => {
     try {
-      await deleteEmail(id);
+      await emailService.delete(id);
+      setEmails((prev) => prev.filter((e) => e._id !== id));
       toast.success("Email deleted");
-    } catch {
+    } catch (error) {
       toast.error("Failed to delete email");
     }
   };
-  return /* @__PURE__ */ React.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ React.createElement(Card, { className: "animate-fade-in" }, /* @__PURE__ */ React.createElement(CardContent, { className: "p-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-col sm:flex-row gap-3" }, /* @__PURE__ */ React.createElement("div", { className: "relative flex-1" }, /* @__PURE__ */ React.createElement(Search, { className: "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" }), /* @__PURE__ */ React.createElement(
-    Input,
-    {
-      id: "history-search",
-      placeholder: "Search emails...",
-      value: search,
-      onChange: (e) => {
-        setSearch(e.target.value);
-        setPage(1);
-      },
-      className: "pl-10"
-    }
-  )), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(Filter, { className: "h-4 w-4 text-muted-foreground" }), /* @__PURE__ */ React.createElement(Select, { value: status, onValueChange: (v) => {
-    setStatus(v);
-    setPage(1);
-  } }, /* @__PURE__ */ React.createElement(SelectTrigger, { id: "history-filter", className: "w-[140px]" }, /* @__PURE__ */ React.createElement(SelectValue, null)), /* @__PURE__ */ React.createElement(SelectContent, null, /* @__PURE__ */ React.createElement(SelectItem, { value: "all" }, "All Status"), /* @__PURE__ */ React.createElement(SelectItem, { value: "sent" }, "Sent"), /* @__PURE__ */ React.createElement(SelectItem, { value: "draft" }, "Draft"), /* @__PURE__ */ React.createElement(SelectItem, { value: "failed" }, "Failed"))))))), /* @__PURE__ */ React.createElement(Card, { className: "animate-fade-in delay-100", style: { animationFillMode: "forwards" } }, /* @__PURE__ */ React.createElement(CardHeader, null, /* @__PURE__ */ React.createElement(CardTitle, { className: "text-lg flex items-center justify-between" }, /* @__PURE__ */ React.createElement("span", null, "Emails (", total, ")"))), /* @__PURE__ */ React.createElement(CardContent, null, loading ? /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, [...Array(5)].map((_, i) => /* @__PURE__ */ React.createElement(Skeleton, { key: i, className: "h-16 rounded-lg" }))) : emails.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "text-center py-12 text-muted-foreground" }, /* @__PURE__ */ React.createElement("p", { className: "text-lg mb-2" }, "No emails found"), /* @__PURE__ */ React.createElement("p", { className: "text-sm" }, "Create your first email to get started"), /* @__PURE__ */ React.createElement(Button, { className: "mt-4", onClick: () => navigate("/create") }, "Create Email")) : /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, emails.map((email) => /* @__PURE__ */ React.createElement(
-    "div",
-    {
-      key: email._id,
-      className: "flex items-center justify-between p-4 rounded-lg border hover:bg-accent/30 transition-all duration-200 group"
-    },
-    /* @__PURE__ */ React.createElement("div", { className: "flex-1 min-w-0 mr-4 cursor-pointer", onClick: () => navigate(`/history/${email._id}`) }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3 mb-1" }, /* @__PURE__ */ React.createElement("p", { className: "text-sm font-medium truncate group-hover:text-primary transition-colors" }, email.subject), /* @__PURE__ */ React.createElement(Badge, { variant: statusColors[email.status] || "default", className: "shrink-0" }, email.status)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-4 text-xs text-muted-foreground" }, /* @__PURE__ */ React.createElement("span", null, "To: ", email.recipientName || email.recipientEmail), email.companyName && /* @__PURE__ */ React.createElement("span", null, "\u2022 ", email.companyName), /* @__PURE__ */ React.createElement("span", null, "\u2022 ", format(new Date(email.createdAt), "MMM d, yyyy h:mm a")), email.qualityScore !== void 0 && /* @__PURE__ */ React.createElement("span", null, "\u2022 Score: ", email.qualityScore, "/100"))),
-    /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" }, /* @__PURE__ */ React.createElement(
-      Button,
-      {
-        variant: "ghost",
-        size: "icon",
-        onClick: () => navigate(`/history/${email._id}`)
-      },
-      /* @__PURE__ */ React.createElement(Eye, { className: "h-4 w-4" })
-    ), /* @__PURE__ */ React.createElement(
-      Button,
-      {
-        variant: "ghost",
-        size: "icon",
-        onClick: () => handleDelete(email._id),
-        className: "text-destructive hover:text-destructive"
-      },
-      /* @__PURE__ */ React.createElement(Trash2, { className: "h-4 w-4" })
-    ))
-  ))), totalPages > 1 && /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-center gap-2 mt-6" }, /* @__PURE__ */ React.createElement(
-    Button,
-    {
-      variant: "outline",
-      size: "sm",
-      disabled: page <= 1,
-      onClick: () => setPage((p) => p - 1)
-    },
-    "Previous"
-  ), /* @__PURE__ */ React.createElement("span", { className: "text-sm text-muted-foreground" }, "Page ", page, " of ", totalPages), /* @__PURE__ */ React.createElement(
-    Button,
-    {
-      variant: "outline",
-      size: "sm",
-      disabled: page >= totalPages,
-      onClick: () => setPage((p) => p + 1)
-    },
-    "Next"
-  )))));
+
+  const formatDate = (date) =>
+    new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl font-bold gradient-text">Email History</h1>
+        <p className="text-sm text-muted-foreground">
+          All your generated application emails
+        </p>
+      </div>
+
+      {emails.length === 0 ? (
+        <Card className="border-border/30 bg-card/30">
+          <CardContent className="py-12 text-center">
+            <Inbox className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+            <p className="text-sm text-muted-foreground">No emails generated yet</p>
+            <Link to="/generate">
+              <Button className="mt-4" size="sm">
+                Generate Your First Email
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {emails.map((email) => (
+            <Card
+              key={email._id}
+              className="border-border/30 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors"
+            >
+              <CardContent className="py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-primary shrink-0" />
+                      <Link
+                        to={`/history/${email._id}`}
+                        className="text-sm font-semibold truncate hover:text-primary transition-colors"
+                      >
+                        {email.subject || "Untitled Email"}
+                      </Link>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 ml-6">
+                      {email.jobTitle || "Unknown Position"} at {email.company || "Unknown Company"}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2 ml-6">
+                      <Badge variant="secondary" className="text-[10px] capitalize">
+                        {email.tone || "professional"}
+                      </Badge>
+                      {email.qualityScores?.overallScore > 0 && (
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] ${
+                            email.qualityScores.overallScore >= 80
+                              ? "text-emerald-400 border-emerald-500/30"
+                              : email.qualityScores.overallScore >= 60
+                              ? "text-amber-400 border-amber-500/30"
+                              : "text-red-400 border-red-500/30"
+                          }`}
+                        >
+                          Quality: {email.qualityScores.overallScore}
+                        </Badge>
+                      )}
+                      {email.matchAnalysis?.matchScore > 0 && (
+                        <Badge variant="outline" className="text-[10px]">
+                          Match: {email.matchAnalysis.matchScore}%
+                        </Badge>
+                      )}
+                      <Badge
+                        variant={email.status === "sent" ? "default" : "secondary"}
+                        className={`text-[10px] capitalize ${
+                          email.status === "sent" ? "bg-emerald-500/10 text-emerald-400" : ""
+                        }`}
+                      >
+                        {email.status}
+                      </Badge>
+                      <span className="text-[10px] text-muted-foreground">
+                        {formatDate(email.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Link to={`/history/${email._id}`}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(email._id)}
+                      className="h-8 w-8 text-muted-foreground hover:text-red-400"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }

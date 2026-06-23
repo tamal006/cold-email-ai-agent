@@ -1,10 +1,12 @@
 import { Router } from "express";
-import { getEmails, getEmailById, deleteEmail, getStats, getTemplates } from "../controllers/emailController.js";
-import { auth } from "../middleware/auth.js";
+import { authenticate } from "../middleware/auth.js";
+import { listEmails, getEmail, deleteEmail, sendEmail } from "../controllers/emailController.js";
+
 const router = Router();
-router.get("/stats", auth, getStats);
-router.get("/templates", auth, getTemplates);
-router.get("/", auth, getEmails);
-router.get("/:id", auth, getEmailById);
-router.delete("/:id", auth, deleteEmail);
+
+router.get("/", authenticate, listEmails);
+router.get("/:id", authenticate, getEmail);
+router.delete("/:id", authenticate, deleteEmail);
+router.post("/send", authenticate, sendEmail);
+
 export default router;

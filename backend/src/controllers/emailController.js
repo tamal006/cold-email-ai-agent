@@ -1,67 +1,103 @@
-import { EmailHistoryTool } from "../tools/EmailHistoryTool.js";
-import { templates } from "../utils/templates.js";
-const emailHistory = new EmailHistoryTool();
-export const getEmails = async (req, res) => {
+import { Email } from "../models/Email.js";
+import { EmailSenderTool } from "../tools/EmailSenderTool.js";
+
+const emailSender = new EmailSenderTool();
+
+/**
+ * List all generated emails for the user
+ */
+export const listEmails = async (req, res) => {
   try {
-    const { status, search, page = "1", limit = "10" } = req.query;
-    const result = await emailHistory.getEmails(req.user?.id, {
-      status,
-      search,
-      page: parseInt(page, 10),
-      limit: parseInt(limit, 10)
-    });
-    res.json({
-      emails: result.emails,
-      total: result.total,
-      page: parseInt(page, 10),
-      totalPages: Math.ceil(result.total / parseInt(limit, 10))
-    });
+    const emails = await Email.find({ userId: req.user.id })
+      .select("jobTitle company subject tone qualityScores.overallScore matchAnalysis.matchScore status createdAt")
+      .sort({ createdAt: -1 });
+
+    res.json({ emails });
   } catch (error) {
-    console.error("Get emails error:", error);
+    console.error("List emails error:", error);
     res.status(500).json({ message: "Failed to fetch emails" });
   }
 };
-export const getEmailById = async (req, res) => {
+
+/**
+ * Get a single email with full details
+ */
+export const getEmail = async (req, res) => {
   try {
-    const email = await emailHistory.getEmailById(req.params.id, req.user?.id);
+    const email = await Email.findOne({
+      _id: req.params.id,
+      userId: req.user.id,
+    });
+
     if (!email) {
-      res.status(404).json({ message: "Email not found" });
-      return;
+      return res.status(404).json({ message: "Email not found" });
     }
+
     res.json({ email });
   } catch (error) {
     console.error("Get email error:", error);
     res.status(500).json({ message: "Failed to fetch email" });
   }
 };
+
+/**
+ * Delete an email
+ */
 export const deleteEmail = async (req, res) => {
   try {
-    const deleted = await emailHistory.deleteEmail(req.params.id, req.user?.id);
-    if (!deleted) {
-      res.status(404).json({ message: "Email not found" });
-      return;
+    const email = await Email.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user.id,
+    });
+
+    if (!email) {
+      return res.status(404).json({ message: "Email not found" });
     }
-    res.json({ message: "Email deleted successfully" });
+
+    res.json({ message: "Email deleted" });
   } catch (error) {
     console.error("Delete email error:", error);
     res.status(500).json({ message: "Failed to delete email" });
   }
 };
-export const getStats = async (req, res) => {
+
+/**
+ * Send an email via SMTP
+ */
+export const sendEmail = async (req, res) => {
   try {
-    const stats = await emailHistory.getStats(req.user?.id);
-    const activity = await emailHistory.getWeeklyActivity(req.user?.id);
-    res.json({ stats, activity });
+    const { emailId, recipientEmail } = req.body;
+
+    if (!emailId || !recipientEmail) {
+      return res.status(400).json({ message: "Email ID and recipient email are required" });
+    }
+
+    const email = await Email.findOne({ _id: emailId, userId: req.user.id });
+    if (!email) {
+      return res.status(404).json({ message: "Email not found" });
+    }
+
+    const result = await emailSender.send({
+      to: recipientEmail,
+      subject: email.subject,
+      text: email.content,
+      html: email.htmlContent,
+    });
+
+    if (result.success) {
+      email.status = "sent";
+      email.sentAt = new Date();
+      await email.save();
+
+      res.json({ message: "Email sent successfully", messageId: result.messageId });
+    } else {
+      email.status = "failed";
+      await email.save();
+
+      res.status(500).json({ message: "Failed to send email", error: result.error });
+    }
   } catch (error) {
-    console.error("Get stats error:", error);
-    res.status(500).json({ message: "Failed to fetch stats" });
-  }
-};
-export const getTemplates = async (_req, res) => {
-  try {
-    res.json({ templates });
-  } catch (error) {
-    console.error("Get templates error:", error);
-    res.status(500).json({ message: "Failed to fetch templates" });
+    console.error("Send email error:", error);
+    res.status(500).json({ message: error.message || "Failed to send email" });
   }
 };

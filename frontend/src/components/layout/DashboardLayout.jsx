@@ -5,15 +5,12 @@ import { Header } from "./Header";
 import { cn } from "@/lib/utils";
 const pageTitles = {
   "/dashboard": "Dashboard",
-  "/create": "Create Email",
-  "/history": "Email History",
-  "/templates": "Templates",
-  "/settings": "Settings",
+  "/generate": "Generate Email",
+  "/resume": "Resume Manager",
   "/jobs": "Job Analyzer",
-  "/contacts": "Contact Discovery",
-  "/outreach": "Outreach Generator",
-  "/tracker": "Job Tracker",
-  "/analytics": "Analytics"
+  "/drafts": "Saved Drafts",
+  "/history": "Email History",
+  "/settings": "Settings",
 };
 export function DashboardLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -30,7 +27,7 @@ export function DashboardLayout({ children }) {
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
-  const title = pageTitles[location.pathname] || "ColdMail AI";
+  const title = pageTitles[location.pathname] || "MailCraft AI";
   return /* @__PURE__ */ React.createElement("div", { className: "min-h-screen bg-background" }, mobileOpen && /* @__PURE__ */ React.createElement(
     "div",
     {

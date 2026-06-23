@@ -9,10 +9,8 @@ A production-ready full-stack SaaS application that generates highly personalize
 - **Frontend**: React 18 + Tailwind CSS v3 + Radix UI / ShadCN + Vite
 - **Backend**: Node.js + Express (ES Modules)
 - **Database**: MongoDB (Mongoose)
-- **AI**: Groq API + Llama 3.3 70B
-- **File Parsing**: PDFParse + Mammoth (DOCX)
-
----
+- **AI**: OpenAI GPT-4o
+- **Email**: Nodemailer + Gmail SMTP
 
 ## ✨ Features
 
@@ -39,9 +37,8 @@ A production-ready full-stack SaaS application that generates highly personalize
 
 - Node.js 20+
 - MongoDB (local or Atlas)
-- Groq API Key
-
----
+- OpenAI API key
+- Gmail account with App Password
 
 ## ⚙️ Local Installation
 
@@ -72,7 +69,13 @@ Edit `backend/.env` with your values:
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/coldmail-agent
 JWT_SECRET=your-secure-random-string-here
-GROQ_API_KEY=gsk_your-groq-api-key-here
+OPENAI_API_KEY=sk-your-openai-api-key
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-gmail-app-password
+FROM_EMAIL=your-email@gmail.com
+FROM_NAME=ColdMail AI Agent
 ```
 
 ### 3. Run Development Servers
